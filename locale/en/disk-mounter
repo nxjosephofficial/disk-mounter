@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+
+if [[ $EUID -ne 0 ]]; then
+  echo "You must be a root user to run this script, please run sudo ./disk-mounter" 2>&1
+  exit 1
+fi
+
+username=$(id -u -n 1000)
+
+fstab="/etc/fstab"
+fstab_old="/etc/fstab.old"
+if [ -f "$fstab" ]; then
+cp "$fstab" "$fstab_old"
+fi
+
+dir_function() {
+if [ ! -d "$DIR" ]; then
+mkdir -p "$DIR"
+else
+echo "${DIR} exists."
+fi
+}
+
+mount_function() {
+cat << EOF >> "$fstab"
+UUID=${UUID}	${DIR}	${TYPE}	defaults,nofail	0	0
+EOF
+echo "Mounting disk."
+mount -a
+chown -R "$username:$username" "$DIR"
+}
+
+partition_function() {
+echo "Enter the name of the partition you want to mount."
+read -r partition
+if [ "$partition" == "" ]; then
+echo "Partition can't be empty, exiting script."
+exit
+else
+echo "${partition} will be used, do you agree?
+Y\N"
+read -r confirmation
+if [[ "$confirmation" == "Y" || "$confirmation" == "y" ]]; then
+UUID="$(blkid -s UUID -o value ${partition})"
+TYPE="$(blkid -s TYPE -o value ${partition})"
+echo "${partition} will be mounted to ${DIR}, do you agree?
+Y\N"
+read -r confirmation
+if [[ "$confirmation" == "Y" || "$confirmation" == "y" ]]; then
+mount_function
+echo "Now, ${partition} will be mounted automatically to ${DIR} in every system launch."
+elif [[ "$confirmation" == "N" || "$confirmation" == "n" ]]; then
+echo "Mounting process is not confirmed, exiting script."
+exit
+else
+echo "An incorrect input was entered, exiting script."
+exit
+fi
+elif [[ "$confirmation" == "N" || "$confirmation" == "n" ]]; then
+echo "${partition} is not confirmed, exiting script."
+exit
+fi
+fi
+}
+
+echo "Choose the directory where your disk will be mounted.
+example: /mnt/usb, /home/${username}/harddisk"
+read -r DIR
+if [ "$DIR" != "" ]; then
+dir_function
+else
+echo "Directory can't be empty, exiting script."
+exit
+fi
+echo "The partition you selected will be mounted to ${DIR}, do you agree?
+Y\N"
+read -r confirmation
+if [[ "$confirmation" == "Y" || "$confirmation" == "y" ]]; then
+partition_function
+elif [[ "$confirmation" == "N" || "$confirmation" == "n" ]]; then
+echo "Directory is not confirmed, exiting script."
+exit
+else
+echo "An incorrect input was entered, exiting script."
+exit
+fi
+

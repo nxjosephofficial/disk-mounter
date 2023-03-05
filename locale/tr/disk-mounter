@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+
+if [[ $EUID -ne 0 ]]; then
+  echo "Bu betiği çalıştırmak için kök kullanıcı izinleri gerekmektedir, lütfen sudo ile çalıştırınız." 2>&1
+  exit 1
+fi
+
+username=$(id -u -n 1000)
+
+fstab="/etc/fstab"
+fstab_old="/etc/fstab.old"
+if [ -f "$fstab" ]; then
+cp "$fstab" "$fstab_old"
+fi
+
+dir_function() {
+if [ ! -d "$DIR" ]; then
+mkdir -p "$DIR"
+else
+echo "${DIR} zaten mevcut."
+fi
+}
+
+mount_function() {
+cat << EOF >> "$fstab"
+UUID=${UUID}	${DIR}	${TYPE}	defaults,nofail	0	0
+EOF
+echo "Disk bağlanıyor."
+mount -a
+chown -R "$username:$username" "$DIR"
+}
+
+partition_function() {
+echo "Bağlanmasını istediğiniz disk bölümünün ismini giriniz."
+read -r partition
+if [ "$partition" == "" ]; then
+echo "Disk bölümü boş bırakılamaz, betikten çıkış yapılıyor."
+exit
+else
+echo "${partition} disk bölümünü onaylıyor musunuz?
+E\H"
+read -r confirmation
+if [[ "$confirmation" == "E" || "$confirmation" == "e" ]]; then
+UUID="$(blkid -s UUID -o value ${partition})"
+TYPE="$(blkid -s TYPE -o value ${partition})"
+echo "${partition} disk bölümünü ${DIR} dizinine bağlamayı onaylıyor musunuz?
+E\H"
+read -r confirmation
+if [[ "$confirmation" == "E" || "$confirmation" == "e" ]]; then
+mount_function
+echo "Artık ${partition} disk bölümü, sistem açıldığında otomatik olarak ${DIR} dizinine bağlanacaktır."
+elif [[ "$confirmation" == "H" || "$confirmation" == "h" ]]; then
+echo "Bağlama işlemi onaylanmadı, betikten çıkış yapılıyor."
+exit
+else
+echo "Yanlış bir girdi girildi, betikten çıkış yapılıyor."
+exit
+fi
+elif [[ "$confirmation" == "H" || "$confirmation" == "h" ]]; then
+echo "${partition} disk bölümü onaylanmadı, betikten çıkış yapılıyor."
+exit
+fi
+fi
+}
+
+echo "Diskinizin bağlanacağı dizini seçin.
+Örnek: /mnt/usb, /home/${username}/harddisk"
+read -r DIR
+if [ "$DIR" != "" ]; then
+dir_function
+else
+echo "Dizin boş bırakılamaz, betikten çıkış yapılıyor."
+exit
+fi
+echo "Diskiniz ${DIR} dizinine bağlanacaktır, onaylıyor musunuz?
+E\H"
+read -r confirmation
+if [[ "$confirmation" == "E" || "$confirmation" == "e" ]]; then
+partition_function
+elif [[ "$confirmation" == "H" || "$confirmation" == "h" ]]; then
+echo "Dizin onaylanmadı, betikten çıkış yapılıyor."
+exit
+else
+echo "Yanlış bir girdi girildi, betikten çıkış yapılıyor."
+exit
+fi
+
