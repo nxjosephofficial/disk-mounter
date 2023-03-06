@@ -7,6 +7,9 @@ fi
 
 username=$(id -u -n 1000)
 
+options_default="defaults,nofail"
+options_fat="defaults,nofail,uid=1000,gid=1000,umask=1000"
+
 fstab="/etc/fstab"
 fstab_old="/etc/fstab.old"
 if [ -f "$fstab" ]; then
@@ -22,9 +25,15 @@ fi
 }
 
 mount_function() {
+if [ "$TYPE" == "vfat" ]; then
 cat << EOF >> "$fstab"
-UUID=${UUID}	${DIR}	${TYPE}	defaults,nofail	0	0
+UUID=${UUID}    ${DIR}  ${TYPE} ${options_fat} 0	0
 EOF
+else
+cat << EOF >> "$fstab"
+UUID=${UUID}	${DIR}	${TYPE}	${options}	0	0
+EOF
+fi
 echo "Disk bağlanıyor."
 mount -a
 chown -R "$username:$username" "$DIR"
