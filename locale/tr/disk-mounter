@@ -78,6 +78,9 @@ fi
 elif [[ "$confirmation" == "H" || "$confirmation" == "h" ]]; then
 echo "${partition} disk bölümü onaylanmadı, betikten çıkış yapılıyor."
 exit
+else
+echo "Yanlış bir girdi girildi, betikten çıkış yapılıyor."
+exit
 fi
 fi
 }
