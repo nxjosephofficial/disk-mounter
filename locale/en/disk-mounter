@@ -24,7 +24,17 @@ echo "${DIR} exists."
 fi
 }
 
+check_if_exist() {
+check_uuid="$(grep -o ${UUID} $fstab)"
+if [ "$check_uuid" != "" ]; then
+existing_fstab_line="$check_uuid"
+echo "Removing existing fstab line..."
+sed -i "/$existing_fstab_line/Id" "$fstab"
+fi
+}
+
 mount_function() {
+check_if_exist
 if [ "$TYPE" == "vfat" ]; then
 cat << EOF >> "$fstab"
 UUID=${UUID}	${DIR}	${TYPE}	${options_fat}	0	0
