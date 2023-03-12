@@ -78,6 +78,9 @@ fi
 elif [[ "$confirmation" == "N" || "$confirmation" == "n" ]]; then
 echo "${partition} is not confirmed, exiting script."
 exit
+else
+echo "An incorrect input was entered, exiting script."
+exit
 fi
 fi
 }
