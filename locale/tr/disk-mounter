@@ -31,7 +31,7 @@ UUID=${UUID}    ${DIR}  ${TYPE} ${options_fat} 0	0
 EOF
 else
 cat << EOF >> "$fstab"
-UUID=${UUID}	${DIR}	${TYPE}	${options}	0	0
+UUID=${UUID}	${DIR}	${TYPE}	${options_default}	0	0
 EOF
 fi
 echo "Disk bağlanıyor."
