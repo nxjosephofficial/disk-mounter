@@ -33,6 +33,15 @@ sed -i "/$existing_fstab_line/Id" "$fstab"
 fi
 }
 
+check_if_mounted() {
+if grep -qs "${DIR} " /proc/mounts; then
+    echo "It's already mounted."
+else
+    echo "Mounting disk."
+    mount -a
+fi
+}
+
 mount_function() {
 check_if_exist
 if [ "$TYPE" == "vfat" ]; then
@@ -44,8 +53,7 @@ cat << EOF >> "$fstab"
 UUID=${UUID}    ${DIR}  ${TYPE} ${options_default}	0	0
 EOF
 fi
-echo "Mounting disk."
-mount -a
+check_if_mounted
 chown -R "$username:$username" "$DIR"
 }
 
